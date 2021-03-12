@@ -84,4 +84,4 @@ async def on_reaction_add(reaction, user):
                         await msg2.delete()
                     await reaction.message.edit(embed=embed)
 
-client.run(token)
+client.run('token')
