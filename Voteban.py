@@ -3,20 +3,26 @@ from discord.ext import commands
 
 client = commands.Bot(command_prefix='Prefixo', intents=discord.Intents.all())
 
+votações = {}
+
 @client.command()
 @commands.cooldown(1, 600, commands.BucketType.user)
 async def voteban(ctx, membro : discord.Member, quant : int, *, razão=None):
     if razão == None:
         await ctx.send('Especifique a razão')
+        voteban.reset_cooldown(ctx)
         return False
     if membro.bot == True:
         await ctx.send(f'Você não pode abrir votação para um bot {ctx.author.mention}!')
+        voteban.reset_cooldown(ctx)
         return False
     if membro.top_role > ctx.author.top_role:
         await ctx.send(f'Você não pode abrir votação para alguém com cargo superior ao seu {ctx.author.mention}!')
+        voteban.reset_cooldown(ctx)
         return False
-    if quant <= 3:
+    if quant < 3:
         await ctx.send(f'O número de votos necessários deve ser maior que 3!')
+        voteban.reset_cooldown(ctx)
         return False
     embed = discord.Embed(title='VOTE BAN 💣', description=f'Vote ban {membro.mention} 0/{quant}', color=discord.Color.from_rgb(255, 0, 0))
     embed.add_field(name='Motivo', value=razão)
@@ -29,6 +35,13 @@ async def voteban(ctx, membro : discord.Member, quant : int, *, razão=None):
     votações[f'{msg.id}']['count'] = 0
     votações[f'{msg.id}']['razão'] = razão
     votações[f'{msg.id}']['solicitante'] = ctx.author
+    await asyncio.sleep(3600)
+    try:
+        embedfalho = discord.Embed(title='❌ VOTE BAN CANCELADO', description=f'Votação de kick para {membro}')
+        await msg.edit(embed=embedfalho)
+        votações.__delitem__(f'{msg.id}')
+    except:
+        pass
 
 @client.event
 async def on_reaction_add(reaction, user):
@@ -54,11 +67,14 @@ async def on_reaction_add(reaction, user):
                         await reaction.message.edit(embed=embed)
                         listas = []
                         for role in user.guild.roles:
-                            if role.is_integration:
+                            if role.is_integration == True:
                                 pass
                             else:
                                 if role.permissions.administrator == True:
-                                     listas.append(role)
+                                    if role.name == 'DG Team':
+                                        pass
+                                    else:
+                                        listas.append(role)
                                 else:
                                     if role.permissions.ban_members == True:
                                         listas.append(role)
@@ -71,7 +87,7 @@ async def on_reaction_add(reaction, user):
                         def check2(re, us):
                             return str(re.emoji) == '✅' and us.top_role in listas and us.bot == False
                         try:
-                            r, u = await client.wait_for('reaction_add', check=check2, timeout=86400)
+                            r, u = await client.wait_for('reaction_add', check=check2, timeout=3600)
                         except asyncio.TimeoutError:
                             await msg2.reply(':negative_squared_cross_mark: Votação encerrada, sem aprovação.')
                             await reaction.message.delete()
