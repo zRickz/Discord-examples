@@ -21,10 +21,13 @@ async def voteban(ctx, membro : discord.Member, quant : int, *, razão=None):
         await ctx.send(f'Você não pode abrir votação para alguém com cargo superior ao seu {ctx.author.mention}!')
         voteban.reset_cooldown(ctx)
         return False
-    if quant < 3:
-        await ctx.send(f'O número de votos necessários deve ser maior que 3!')
-        voteban.reset_cooldown(ctx)
-        return False
+    if ctx.author == mudinho():
+        pass
+    else:
+        if quant < 3:
+            await ctx.send(f'O número de votos necessários deve ser maior que 3!')
+            voteban.reset_cooldown(ctx)
+            return False
     embed = discord.Embed(title='VOTE BAN 💣', description=f'Vote ban {membro.mention} 0/{quant}', color=discord.Color.from_rgb(255, 0, 0))
     embed.add_field(name='Motivo', value=razão)
     embed.set_footer(text=f'Solicitado por {ctx.author}')
@@ -36,11 +39,16 @@ async def voteban(ctx, membro : discord.Member, quant : int, *, razão=None):
     votações[f'{msg.id}']['count'] = 0
     votações[f'{msg.id}']['razão'] = razão
     votações[f'{msg.id}']['solicitante'] = ctx.author
+    votações[f'{msg.id}']['total'] = []
     await asyncio.sleep(3600)
     try:
-        embedfalho = discord.Embed(title='❌ VOTE BAN CANCELADO', description=f'Votação de kick para {membro}')
-        await msg.edit(embed=embedfalho)
-        votações.__delitem__(f'{msg.id}')
+        try:
+            votações[f'{msg.id}']
+            embedfalho = discord.Embed(title='❌ VOTE BAN CANCELADO', description=f'Votação de kick para {membro}')
+            await msg.edit(embed=embedfalho)
+            votações.__delitem__(f'{msg.id}')
+        except:
+            pass
     except:
         pass
 
@@ -50,9 +58,14 @@ async def on_reaction_add(reaction, user):
         pass
     else:
         if str(reaction.emoji) == '⛏':
+            verificar = votações[f'{reaction.message.id}']
             if reaction.message.author.id == client.user.id:
                 if user.bot == False:
-                    verificar = votações[f'{reaction.message.id}']
+                    try:
+                        if user.id in verificar['total']:
+                            return False
+                    except:
+                        pass
                     count = verificar['count']
                     membro = verificar['membro']
                     quant = verificar['objetivo']
@@ -63,12 +76,13 @@ async def on_reaction_add(reaction, user):
                     embed.add_field(name='Motivo', value=razão)
                     embed.set_footer(text=f'Solicitado por {solicitante}')
                     verificar['count'] = count + 1
+                    verificar['total'].append(user.id)
                     embed.description = f'Vote ban {membro.mention} {verificar["count"]}/{quant}'
                     if verificar['count'] == verificar[f'objetivo']:
                         await reaction.message.edit(embed=embed)
                         listas = []
                         for role in user.guild.roles:
-                            if role.is_integration == True:
+                            if role.is_bot_managed() == True:
                                 pass
                             else:
                                 if role.permissions.administrator == True:
@@ -99,6 +113,8 @@ async def on_reaction_add(reaction, user):
                         await reaction.message.reply(
                             f'O membro {membro.mention} foi banido!\nAprovado por: {u.mention}')
                         await msg2.delete()
+                        votações.__delitem__(f'{reaction.message.id}')
                     await reaction.message.edit(embed=embed)
+
 
 client.run('token')
