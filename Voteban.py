@@ -21,13 +21,10 @@ async def voteban(ctx, membro : discord.Member, quant : int, *, razão=None):
         await ctx.send(f'Você não pode abrir votação para alguém com cargo superior ao seu {ctx.author.mention}!')
         voteban.reset_cooldown(ctx)
         return False
-    if ctx.author == mudinho():
-        pass
-    else:
-        if quant < 3:
-            await ctx.send(f'O número de votos necessários deve ser maior que 3!')
-            voteban.reset_cooldown(ctx)
-            return False
+    if quant < 3:
+        await ctx.send(f'O número de votos necessários deve ser maior que 3!')
+        voteban.reset_cooldown(ctx)
+        return False
     embed = discord.Embed(title='VOTE BAN 💣', description=f'Vote ban {membro.mention} 0/{quant}', color=discord.Color.from_rgb(255, 0, 0))
     embed.add_field(name='Motivo', value=razão)
     embed.set_footer(text=f'Solicitado por {ctx.author}')
